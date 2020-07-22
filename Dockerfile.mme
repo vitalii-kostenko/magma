@@ -52,8 +52,9 @@ RUN echo "Install 3rd party dependencies" && \
     libyaml-cpp-dev nlohmann-json-dev && \
     echo "Install Prometheus requirements" && \
     apt-get -y install telegraf && \
+    echo "Install ZeroMQ" && \
+    apt-get install -y libczmq-dev=4.1.0-2 && \
     ln -s /usr/bin/python2.7 /usr/local/bin/python
-    
 
 RUN ["/bin/bash", "-c", "if [[ -v GIT_PROXY ]]; then git config --global http.proxy $GIT_PROXY; fi"]
 
@@ -190,7 +191,7 @@ RUN echo "Install fmtlib required by Folly" && \
     cmake -DBUILD_SHARED_LIBS=ON -Wno-dev .. && \
     make -j4 && \
     make install
-
+    
 ### Following  is required to build MME with OVS support
 # WARNING!!! for the moment it'snot working well cause libfluid linked with Ubuntu incorrectly 
 # ENV FEATURES=agw_of
@@ -282,6 +283,11 @@ COPY --from=conv-builder /usr/lib/x86_64-linux-gnu/libsnappy.so.1 /usr/lib/x86_6
 COPY --from=conv-builder /usr/lib/x86_64-linux-gnu/libicui18n.so.60 /usr/lib/x86_64-linux-gnu/
 COPY --from=conv-builder /usr/lib/x86_64-linux-gnu/libicuuc.so.60 /usr/lib/x86_64-linux-gnu/
 COPY --from=conv-builder /usr/lib/x86_64-linux-gnu/libicudata.so.60 /usr/lib/x86_64-linux-gnu/
+COPY --from=conv-builder /usr/lib/x86_64-linux-gnu/libczmq.so.4.1.0 /usr/lib/x86_64-linux-gnu/
+COPY --from=conv-builder /usr/lib/x86_64-linux-gnu/libzmq.so.5.1.5 /usr/lib/x86_64-linux-gnu/
+COPY --from=conv-builder /usr/lib/x86_64-linux-gnu/libsodium.so.23.1.0 /usr/lib/x86_64-linux-gnu/
+COPY --from=conv-builder /usr/lib/x86_64-linux-gnu/libpgm-5.2.so.0.0.122 /usr/lib/x86_64-linux-gnu/
+COPY --from=conv-builder /usr/lib/x86_64-linux-gnu/libnorm.so.1.0.0 /usr/lib/x86_64-linux-gnu/
 
 COPY --from=conv-builder /usr/local/lib/libfdproto.so.6 /usr/local/lib/
 COPY --from=conv-builder /usr/local/lib/libfdcore.so.6 /usr/local/lib/
