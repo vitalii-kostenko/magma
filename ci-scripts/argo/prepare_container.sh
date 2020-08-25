@@ -22,4 +22,6 @@ git clone --depth 1 https://github.com/pyenv/pyenv.git $PYENV_HOME && \
 export PATH=$PYENV_HOME/shims:$PYENV_HOME/bin:$PATH
 pyenv install $PYTHON_VERSION
 pyenv global $PYTHON_VERSION
-pip install pyyaml
+# pip install pyyaml
+
+# && \. ci-scripts/argo/build_orc8r_containers.sh 
