@@ -15,13 +15,11 @@ apk add --no-cache --update \
     build-base
 
 export PYENV_HOME=/root/.pyenv
-
+export PYTHON_VERSION=3.7.0
 # Install pyenv, then install python versions
 git clone --depth 1 https://github.com/pyenv/pyenv.git $PYENV_HOME && \
     rm -rfv $PYENV_HOME/.git
 export PATH=$PYENV_HOME/shims:$PYENV_HOME/bin:$PATH
 pyenv install $PYTHON_VERSION
 pyenv global $PYTHON_VERSION
-# pip install pyyaml
-
-# && \. ci-scripts/argo/build_orc8r_containers.sh 
+pip install pyyaml
