@@ -13,7 +13,7 @@ export REGISTRY=docker-registry:5000
 # For v1.1.0
 # for image in proxy controller prometheus-cache alertmanager-configurer prometheus-configurer grafana 
 # For v2.0.0
-for image in controller prometheus-cache alertmanager-configurer prometheus-configurer grafana 
+for image in nginx controller prometheus-cache alertmanager-configurer prometheus-configurer user-grafana 
 do 
     ../../../orc8r/tools/docker/publish.sh -r $REGISTRY -i $image -v $MAGMA_TAG
 done 
