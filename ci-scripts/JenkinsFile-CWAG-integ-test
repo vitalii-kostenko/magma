@@ -52,9 +52,9 @@ pipeline {
     stage("cwf-integ-test"){
       environment {
         CIRCLE_REPOSITORY_URL = "https://${GIT_URL}.git"
-        CIRCLE_BRANCH = "$GIT_BRANCH"
+        CIRCLE_BRANCH = "${GIT_BRANCH}"
         CIRCLE_SHA1 = "HEAD"
-        PYTHONPATH = "$WORKSPACE/orc8r"
+        PYTHONPATH = "${WORKSPACE}/orc8r"
       }
       steps{
         script {
@@ -105,17 +105,17 @@ pipeline {
                 sh """
                   export PYENV_ROOT="\$HOME/.pyenv"
                   export PATH="\$PYENV_ROOT/shims:\$PATH"
-                  fab integ_test:destroy_vm=True,transfer_images=True,test_result_xml=$test_xml
+                  fab integ_test:destroy_vm=True,transfer_images=True,test_result_xml=${test_xml}
                 """
               } catch (Exception e) {
                 test_results = 1
               }
             }
-            sh "mkdir $test_folder"
+            sh "mkdir ${test_folder}"
             try {
-              sh "junit2html $test_xml $test_html"
-              sh "cp $test_xml $test_folder"
-              sh "cp $test_html $test_folder"
+              sh "junit2html ${test_xml} ${test_html}"
+              sh "cp ${test_xml} ${test_folder}"
+              sh "cp ${test_html} ${test_folder}"
             } catch (Exception e) {
               echo "It might fail because XML file was not generated at previous step"
               currentBuild.result = 'FAILURE'
@@ -130,16 +130,16 @@ pipeline {
                 sh """
                   export PYENV_ROOT="\$HOME/.pyenv"
                   export PATH="\$PYENV_ROOT/shims:\$PATH"
-                  fab transfer_artifacts:services='$services',get_core_dump=True
+                  fab transfer_artifacts:services='${services}',get_core_dump=True
                 """
                 // Copy the log files out from the node
-                sh "cp *.log $test_folder"
+                sh "cp *.log ${test_folder}"
                 if( fileExists("coredump.tar.gz") ) {
-                  sh "cp coredump.tar.gz $test_folder"
+                  sh "cp coredump.tar.gz ${test_folder}"
                 }
               } catch (Exception e) {}
             }
-            archiveArtifacts("$test_folder/*")
+            archiveArtifacts("${test_folder}/*")
           }
         }
       }

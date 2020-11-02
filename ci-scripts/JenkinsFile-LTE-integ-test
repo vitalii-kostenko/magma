@@ -35,9 +35,9 @@ pipeline {
     stage("lte-integ-test"){
       environment {
         CIRCLE_REPOSITORY_URL = "https://${GIT_URL}.git"
-        CIRCLE_BRANCH = "$GIT_BRANCH"
+        CIRCLE_BRANCH = "${GIT_BRANCH}"
         CIRCLE_SHA1 = "HEAD"
-        PYTHONPATH = "$WORKSPACE/orc8r"
+        PYTHONPATH = "${WORKSPACE}/orc8r"
       }
       steps{
         script {
@@ -83,19 +83,19 @@ pipeline {
               }
             }
             def test_folder = "lte-artifacts"
-            sh "mkdir $test_folder"
+            sh "mkdir ${test_folder}"
             if (test_results) {
               currentBuild.result = 'FAILURE'
               def tar_file_name = "lte-test-logs.tar.gz"
               // # On failure, transfer logs into current directory
-              def log_path = "$test_folder/$tar_file_name"
+              def log_path = "${test_folder}/${tar_file_name}"
               sh """
                 export PYENV_ROOT="\$HOME/.pyenv"
                 export PATH="\$PYENV_ROOT/shims:\$PATH"
-                fab get_test_logs:dst_path=\"$log_path\"
+                fab get_test_logs:dst_path=\"${log_path}\"
               """
             }
-            archiveArtifacts("$test_folder/*")
+            archiveArtifacts("${test_folder}/*")
           }
         }
       }
