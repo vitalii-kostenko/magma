@@ -69,7 +69,6 @@ pipeline {
             pip3 install --upgrade pip
             pip3 install fabric3 jsonpickle requests PyYAML awscli docker-compose
           """
-          // sh "sleep 10"
           sh "vagrant global-status 2>/dev/null | awk '/virtualbox/{print \$1}' | xargs -I {} vagrant destroy -f {}"
           try {
             sh "vboxmanage unregistervm cwag-dev --delete"
@@ -112,7 +111,6 @@ pipeline {
                 test_results = 1
               }
             }
-            //  Move JUnit test result to /tmp/test-results directory
             sh "mkdir $test_folder"
             try {
               sh "junit2html $test_xml $test_html"
@@ -124,9 +122,7 @@ pipeline {
             }
             
             // On failure, transfer logs of key services from docker containers and
-            // copy to the log directory. This will get stored as an artifact in the
-            // circleCI config.
-            // Following lines to be translated in to Jenkins DSL yet
+            // copy to the log directory.
             if (test_results) {
               currentBuild.result = 'FAILURE'
               def services = "sessiond session_proxy pcrf ocs pipelined ingress"
