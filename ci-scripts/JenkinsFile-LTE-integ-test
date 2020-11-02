@@ -1,0 +1,129 @@
+#!/bin/groovy
+
+def GIT_URL = "github.com/magma/magma"
+def GIT_BRANCH = "master"
+def slack_channel = "#magma-ci-bot"
+
+pipeline {
+  agent {
+      label "CWAG"
+  }
+  options {
+    timestamps()
+    ansiColor('xterm')
+  }
+  stages {
+    stage("Prepate Env"){
+      steps{
+        script {
+          echo "Clean Env"
+          cleanWs()
+          echo "Clone Sources"
+          checkout(
+            changelog: false, 
+            poll: false, 
+            scm: [$class: 'GitSCM', 
+                  branches: [[name: '${sha1}']], 
+                  doGenerateSubmoduleConfigurations: false, 
+                  extensions: [], 
+                  submoduleCfg: [], 
+                  userRemoteConfigs: [[refspec: '+refs/pull/*:refs/remotes/origin/pr/*', url: "https://" + GIT_URL + ".git"]]]
+          )
+        }
+      }
+    }
+    stage("lte-integ-test"){
+      environment {
+        CIRCLE_REPOSITORY_URL = "https://${GIT_URL}.git"
+        CIRCLE_BRANCH = "$GIT_BRANCH"
+        CIRCLE_SHA1 = "HEAD"
+        PYTHONPATH = "$WORKSPACE/orc8r"
+      }
+      steps{
+        script {
+          echo "Setup required packages"
+          sh """
+            export PATH;
+            export PYENV_ROOT="\$HOME/.pyenv"
+            export PATH="\$PYENV_ROOT/bin:\$PATH"
+            eval "\$(pyenv init -)"
+            eval "\$(pyenv virtualenv-init -)"
+            pyenv global 3.7.0
+            pip3 install --upgrade pip
+            pip3 install fabric3 jsonpickle requests PyYAML awscli docker-compose
+          """
+          sh "vagrant global-status 2>/dev/null | awk '/virtualbox/{print \$1}' | xargs -I {} vagrant destroy -f {}"
+          try {
+            sh "vboxmanage unregistervm magma-dev --delete"
+          } catch (Exception e) {
+            echo "magma-dev didn't exists as expected"
+          }
+          try {
+            sh "vboxmanage unregistervm magma-trfserver --delete"
+          } catch (Exception e) {
+            echo "magma-trfserver didn't exists as expected"
+          }
+          try {
+            sh "vboxmanage unregistervm magma_test --delete"
+          } catch (Exception e) {
+            echo "magma_test didn't exists as expected"
+          }
+          
+          dir('lte/gateway') {
+            def test_results = 0
+            timeout(time: 120, unit: 'MINUTES') {
+              try {
+                sh """
+                    export PYENV_ROOT="\$HOME/.pyenv"
+                    export PATH="\$PYENV_ROOT/shims:\$PATH"
+                    fab integ_test
+                  """
+              } catch (Exception e) {
+                test_results=1
+              }
+            }
+            def test_folder = "lte-artifacts"
+            sh "mkdir $test_folder"
+            if (test_results) {
+              currentBuild.result = 'FAILURE'
+              def tar_file_name = "lte-test-logs.tar.gz"
+              // # On failure, transfer logs into current directory
+              def log_path = "$test_folder/$tar_file_name"
+              sh """
+                export PYENV_ROOT="\$HOME/.pyenv"
+                export PATH="\$PYENV_ROOT/shims:\$PATH"
+                fab get_test_logs:dst_path=\"$log_path\"
+              """
+            }
+            archiveArtifacts("$test_folder/*")
+          }
+        }
+      }
+    }
+  }
+  post {
+    success {
+      script {
+        def color = "good"
+        def message = "MAGMA " + JOB_NAME + " build (" + BUILD_ID + "): passed (" + BUILD_URL + ")"
+        echo message
+        sendSocialMediaMessage(slack_channel,color, message)
+      }
+    }
+    unsuccessful {
+      script {
+        def color = "danger"
+        def message = "MAGMA " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ")"
+        echo message
+        sendSocialMediaMessage(slack_channel,color, message)
+      }
+    }
+  }
+}
+
+//-------------------------------------------------------------------------------
+// Abstraction function to send social media messages:
+// like on Slack or Mattermost
+def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
+    slackSend channel: pipeChannel, color: pipeColor, message: pipeMessage
+}
